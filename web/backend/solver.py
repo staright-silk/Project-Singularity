@@ -1,14 +1,8 @@
-"""
-Core physics engine for Project Singularity's Hawking radiation module.
+"""Hawking radiation simulation engine.
 
-This is a direct refactor of quantum3_hawking_complete.py into a stateful
-class that can be stepped, paused, reset, and reconfigured on the fly from
-a server loop instead of driving a matplotlib animation.
-
-Numerics are unchanged from the original script:
-  - Split-operator Fourier method (Strang splitting: V/2, K, V/2)
-  - Absorbing boundary layers (quadratic imaginary potential) at both ends
-  - Stochastic Hawking radiation source injected just outside the horizon
+Provides a stateful `HawkingSimulation` class with `step()`, `reset()`, and
+runtime configuration. Uses a split-operator FFT solver with simple absorbing
+boundaries and a stochastic noise source to emulate Hawking-like emission.
 """
 import numpy as np
 
@@ -80,13 +74,13 @@ class HawkingSimulation:
         self.dr = self.r[1] - self.r[0]
         self.k = 2 * np.pi * np.fft.fftfreq(self.N, d=self.dr)
 
-        # Regge-Wheeler / scalar-like effective potential (approximate)
-        # V(r) = (1 - rs/r) * ( l(l+1)/r^2 + rs / r^3 )
-        # Use eps to avoid exact divergence at the horizon r=rs.
+        # approximate scalar potential for a Schwarzschild-like background
+        # (protected by `eps` to avoid a numerical singularity at r=rs)
         rr = np.maximum(self.r, self.rs + self.eps)
         factor = 1.0 - (self.rs / rr)
         self.V = factor * (self.l * (self.l + 1) / rr**2 + (self.rs) / rr**3)
 
+        # simple quadratic absorbing layers at both ends to remove outgoing waves
         W = np.zeros_like(self.r)
         mask = self.r < (self.rs + self.awl)
         x = (self.rs + self.awl - self.r[mask]) / self.awl
@@ -102,7 +96,7 @@ class HawkingSimulation:
 
         self.hawking_mask = (self.r >= self.rs) & (self.r <= self.rs + self.radiation_width)
         self._n_hawking = int(np.sum(self.hawking_mask))
-        # RNG for reproducible stochastic source
+        # seeded RNG for reproducible stochastic noise
         if self.rng_seed is None:
             self._rng = np.random.default_rng()
         else:
@@ -112,15 +106,17 @@ class HawkingSimulation:
     # State control
     # ------------------------------------------------------------------
     def reset(self):
-        """Reinitialize the wavepacket and clear history. Rebuilds the grid too,
-        so this is safe to call right after set_params()."""
+        """Reinitialize the wavepacket and clear history.
+
+        Safe to call right after `set_params()`; rebuilds the grid internally.
+        """
         self._build_grid()
         psi = np.exp(-(self.r - self.r0) ** 2 / (4 * self.sigma**2)) * np.exp(1j * self.p0 * self.r)
         psi /= np.sqrt(np.sum(np.abs(psi) ** 2) * self.dr)
         self.psi = psi
         self._last_noise = np.zeros_like(psi)
 
-        # cumulative absorbed probability via imaginary potential W
+        # cumulative probability removed by the absorbing layers (W)
         self.captured = 0.0
 
         self.step_count = 0
@@ -133,6 +129,7 @@ class HawkingSimulation:
     def step(self):
         """Advance the simulation by one dt. Returns (probability, hawking_flux)."""
         psi = self.psi * self.UV
+        # build a small complex stochastic source just outside the horizon
         noise = np.zeros_like(psi, dtype=complex)
         phase = np.exp(2j * np.pi * self._rng.random(self._n_hawking))
         hw = (
@@ -154,10 +151,9 @@ class HawkingSimulation:
         P = float(np.sum(np.abs(psi) ** 2) * self.dr)
         H = float(np.sum(np.abs(noise) ** 2) * self.dr)
 
-        # Estimate absorbed probability during this step from the imaginary potential W
-        # dP/dt = -2 * ∫ W |psi|^2 dr  => ΔP_absorbed ≈ 2 * ∑ W |psi|^2 * dr * dt
+        # estimate how much probability the absorber removed this step
+        # (approximate: ΔP ≈ 2 * ∑ W |ψ|^2 * dr * dt)
         absorbed = 2.0 * float(np.sum(self.W * np.abs(psi) ** 2) * self.dr) * self.dt
-        # ensure non-negative
         if absorbed < 0:
             absorbed = 0.0
         self.captured += absorbed
@@ -189,7 +185,7 @@ class HawkingSimulation:
             "time": self.time,
             "step": self.step_count,
             "probability": self.probs[-1] if self.probs else 1.0,
-            # use cumulative absorbed probability computed from W rather than 1-P
+            # cumulative absorbed probability (from the imaginary potential)
             "captured_probability": float(self.captured),
             "flux": self.flux[-1] if self.flux else 0.0,
             "rs": self.rs,
