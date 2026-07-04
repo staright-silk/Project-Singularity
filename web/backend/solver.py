@@ -12,9 +12,9 @@ class HawkingSimulation:
         self.set_params(**params)
         self.reset()
 
-    # ------------------------------------------------------------------
+    
     # Configuration
-    # ------------------------------------------------------------------
+    
     def set_params(
         self,
         rs=2.0,
@@ -102,9 +102,9 @@ class HawkingSimulation:
         else:
             self._rng = np.random.default_rng(self.rng_seed)
 
-    # ------------------------------------------------------------------
+    
     # State control
-    # ------------------------------------------------------------------
+    
     def reset(self):
         """Reinitialize the wavepacket and clear history.
 
@@ -165,9 +165,9 @@ class HawkingSimulation:
         self.flux.append(H)
         return P, H
 
-    # ------------------------------------------------------------------
+    
     # State export (for WebSocket / REST)
-    # ------------------------------------------------------------------
+    
     def get_state(self, downsample: int = 4) -> dict:
         """Snapshot of the current frame, downsampled for network transfer.
         With N=4096 and downsample=4 this sends ~1024 points/field per frame."""
