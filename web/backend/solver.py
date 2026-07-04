@@ -1,9 +1,3 @@
-"""Hawking radiation simulation engine.
-
-Provides a stateful `HawkingSimulation` class with `step()`, `reset()`, and
-runtime configuration. Uses a split-operator FFT solver with simple absorbing
-boundaries and a stochastic noise source to emulate Hawking-like emission.
-"""
 import numpy as np
 
 
@@ -12,28 +6,25 @@ class HawkingSimulation:
         self.set_params(**params)
         self.reset()
 
-    
-    # Configuration
-    
     def set_params(
         self,
-        rs=2.0,
-        L=100.0,
-        N=4096,
-        dt=0.005,
-        r0=30.0,
-        sigma=2.0,
-        p0=-2.5,
+        rs=2.0,           # Schwarzschild radius
+        L=100.0,          # domain length
+        N=4096,           # grid points
+        dt=0.005,         # timestep
+        r0=30.0,          # initial packet center
+        sigma=2.0,        # initial width
+        p0=-2.5,          # initial momentum
         hawking_temperature=0.15,
         radiation_width=3.0,
         l=0,
         rng_seed: int | None = None,
         eps=0.01,
-        awl=5.0,
-        awr=15.0,
+        awl=5.0,          # absorber left width
+        awr=15.0,         # absorber right width
         noise_amp=0.002,
     ):
-        """Set (or update) all physical/numerical parameters and rebuild the grid."""
+        """Set simulation params."""
         self.rs = float(rs)
         self.L = float(L)
         self.N = int(N)
@@ -74,13 +65,12 @@ class HawkingSimulation:
         self.dr = self.r[1] - self.r[0]
         self.k = 2 * np.pi * np.fft.fftfreq(self.N, d=self.dr)
 
-        # approximate scalar potential for a Schwarzschild-like background
-        # (protected by `eps` to avoid a numerical singularity at r=rs)
+        # Schwarzschild-ish potential
         rr = np.maximum(self.r, self.rs + self.eps)
         factor = 1.0 - (self.rs / rr)
         self.V = factor * (self.l * (self.l + 1) / rr**2 + (self.rs) / rr**3)
 
-        # simple quadratic absorbing layers at both ends to remove outgoing waves
+        # Absorbing boundaries.
         W = np.zeros_like(self.r)
         mask = self.r < (self.rs + self.awl)
         x = (self.rs + self.awl - self.r[mask]) / self.awl
@@ -92,44 +82,34 @@ class HawkingSimulation:
 
         Veff = self.V - 1j * self.W
         self.UV = np.exp(-1j * Veff * self.dt / 2)
-        self.UK = np.exp(-1j * 0.5 * self.k**2 * self.dt)
+        self.UK = np.exp(-0.5j * self.k**2 * self.dt)
 
         self.hawking_mask = (self.r >= self.rs) & (self.r <= self.rs + self.radiation_width)
         self._n_hawking = int(np.sum(self.hawking_mask))
-        # seeded RNG for reproducible stochastic noise
         if self.rng_seed is None:
             self._rng = np.random.default_rng()
         else:
             self._rng = np.random.default_rng(self.rng_seed)
 
-    
-    # State control
-    
     def reset(self):
-        """Reinitialize the wavepacket and clear history.
-
-        Safe to call right after `set_params()`; rebuilds the grid internally.
-        """
+        """Reset packet and history."""
         self._build_grid()
         psi = np.exp(-(self.r - self.r0) ** 2 / (4 * self.sigma**2)) * np.exp(1j * self.p0 * self.r)
         psi /= np.sqrt(np.sum(np.abs(psi) ** 2) * self.dr)
         self.psi = psi
         self._last_noise = np.zeros_like(psi)
 
-        # cumulative probability removed by the absorbing layers (W)
         self.captured = 0.0
-
         self.step_count = 0
         self.time = 0.0
-        self.times: list[float] = []
-        self.probs: list[float] = []
-        self.flux: list[float] = []
+        self.times, self.probs, self.flux = [], [], []
         self.running = False
 
     def step(self):
-        """Advance the simulation by one dt. Returns (probability, hawking_flux)."""
+        """Advance one tick."""
         psi = self.psi * self.UV
-        # build a small complex stochastic source just outside the horizon
+
+        # small noisy source near the horizon
         noise = np.zeros_like(psi, dtype=complex)
         phase = np.exp(2j * np.pi * self._rng.random(self._n_hawking))
         hw = (
@@ -151,8 +131,7 @@ class HawkingSimulation:
         P = float(np.sum(np.abs(psi) ** 2) * self.dr)
         H = float(np.sum(np.abs(noise) ** 2) * self.dr)
 
-        # estimate how much probability the absorber removed this step
-        # (approximate: ΔP ≈ 2 * ∑ W |ψ|^2 * dr * dt)
+        # rough absorber loss estimate
         absorbed = 2.0 * float(np.sum(self.W * np.abs(psi) ** 2) * self.dr) * self.dt
         if absorbed < 0:
             absorbed = 0.0
@@ -165,27 +144,22 @@ class HawkingSimulation:
         self.flux.append(H)
         return P, H
 
-    
-    # State export (for WebSocket / REST)
-    
     def get_state(self, downsample: int = 4) -> dict:
-        """Snapshot of the current frame, downsampled for network transfer.
-        With N=4096 and downsample=4 this sends ~1024 points/field per frame."""
+        """Current frame for the frontend."""
         idx = slice(None, None, max(1, downsample))
         density = np.abs(self.psi) ** 2
 
-        hawking_disp = np.zeros_like(self.r)
-        hawking_disp[self.hawking_mask] = 100 * np.abs(self._last_noise[self.hawking_mask]) ** 2
+        h_disp = np.zeros_like(self.r)  # hawking display
+        h_disp[self.hawking_mask] = 100 * np.abs(self._last_noise[self.hawking_mask]) ** 2
 
         return {
             "r": self.r[idx].tolist(),
             "density": density[idx].tolist(),
-            "hawking": hawking_disp[idx].tolist(),
+            "hawking": h_disp[idx].tolist(),
             "potential": self.V[idx].tolist(),
             "time": self.time,
             "step": self.step_count,
             "probability": self.probs[-1] if self.probs else 1.0,
-            # cumulative absorbed probability (from the imaginary potential)
             "captured_probability": float(self.captured),
             "flux": self.flux[-1] if self.flux else 0.0,
             "rs": self.rs,
@@ -193,7 +167,7 @@ class HawkingSimulation:
         }
 
     def get_history(self, max_points: int = 500) -> dict:
-        """Downsampled full time series for the probability/flux strip charts."""
+        """History for the strip charts."""
         n = len(self.times)
         if n == 0:
             return {"times": [], "probs": [], "flux": []}
