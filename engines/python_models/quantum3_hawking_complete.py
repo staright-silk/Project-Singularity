@@ -1,9 +1,11 @@
 
 # Hawking-enabled quantum black hole simulation
+# implemented using regge  wheeler formalism, schrodinger eqn and tortoise coordinates
+# for simplicity and illustrative rendering, some constants have been declared unity
 import numpy as np
 import matplotlib.pyplot as plt
 
-rs=2.0
+rs=2.0 #schwarzchild radius
 L=100.0
 N=4096
 r_start=rs+0.05
