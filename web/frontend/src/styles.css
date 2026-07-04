@@ -1,0 +1,474 @@
+/* ======================================================================
+   Project Singularity — design tokens
+   Palette is functionally grounded, not decorative: cyan marks what's
+   still bound inside the wavefunction, amber marks what's escaping as
+   Hawking radiation. That mapping holds everywhere color appears.
+   ====================================================================== */
+:root {
+  --bg: #0a0d13;
+  --surface: #10141d;
+  --surface-raised: #161c28;
+  --border: #232a3a;
+  --border-bright: #303b52;
+
+  --text: #cdd6f4;
+  --text-muted: #6b7490;
+  --text-dim: #454e68;
+
+  --accent-bound: #7dcfff;   /* wavefunction still inside the well */
+  --accent-radiation: #ff9e64; /* what has escaped */
+  --accent-danger: #f7768e;
+
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius: 4px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% -10%, rgba(125, 207, 255, 0.06), transparent 60%),
+    radial-gradient(ellipse at 90% 110%, rgba(255, 158, 100, 0.05), transparent 60%);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input {
+  font-family: inherit;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ======================================================================
+   App shell
+   ====================================================================== */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 18px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.brand-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--accent-bound);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.conn-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.conn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.conn-status--connected .conn-dot {
+  background: #9ece6a;
+  box-shadow: 0 0 8px #9ece6a;
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.conn-status--connecting .conn-dot {
+  background: var(--accent-radiation);
+  animation: pulse-soft 0.9s ease-in-out infinite;
+}
+
+.conn-status--disconnected .conn-dot {
+  background: var(--accent-danger);
+  animation: pulse-soft 0.6s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ======================================================================
+   Layout
+   ====================================================================== */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scope-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ======================================================================
+   Scope panel — the instrument's centerpiece
+   ====================================================================== */
+.scope-panel {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  height: 420px;
+}
+
+.scope-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scope-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-bright);
+  opacity: 0.7;
+}
+.scope-corner--tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.scope-corner--tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.scope-corner--bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.scope-corner--br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+.scope-legend {
+  position: absolute;
+  top: 14px;
+  right: 26px;
+  display: flex;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  z-index: 2;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-swatch {
+  width: 9px;
+  height: 2px;
+  border-radius: 1px;
+}
+.legend-swatch--bound { background: var(--accent-bound); box-shadow: 0 0 4px var(--accent-bound); }
+.legend-swatch--radiation { background: var(--accent-radiation); box-shadow: 0 0 4px var(--accent-radiation); }
+
+.scope-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* ======================================================================
+   Strip charts
+   ====================================================================== */
+.strips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 600px) {
+  .strips { grid-template-columns: 1fr; }
+}
+
+.strip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.strip-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.strip-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.strip-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.strip-canvas {
+  width: 100%;
+  height: 56px;
+  display: block;
+}
+
+/* ======================================================================
+   Control panel — physical console feel
+   ====================================================================== */
+.control-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.control-panel--empty {
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  min-height: 80px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-radiation);
+  animation: pulse-soft 0.9s ease-in-out infinite;
+}
+
+.console-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.console-btn {
+  appearance: none;
+  border: 1px solid var(--border-bright);
+  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 10px 4px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 0.08s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.console-btn:hover {
+  border-color: var(--border-bright);
+  color: var(--text);
+}
+
+.console-btn:active {
+  transform: translateY(1px);
+}
+
+.console-btn:focus-visible {
+  outline: 2px solid var(--accent-bound);
+  outline-offset: 2px;
+}
+
+.console-btn--go.is-active {
+  color: #9ece6a;
+  border-color: #9ece6a;
+  box-shadow: 0 0 10px rgba(158, 206, 106, 0.25) inset;
+}
+
+.console-btn--pause.is-active {
+  color: var(--accent-radiation);
+  border-color: var(--accent-radiation);
+  box-shadow: 0 0 10px rgba(255, 158, 100, 0.2) inset;
+}
+
+.console-btn--reset:hover {
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+}
+
+/* Sliders */
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.slider-value {
+  color: var(--accent-bound);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider-symbol {
+  color: var(--text-dim);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-bright);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent-bound);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 6px rgba(125, 207, 255, 0.6);
+  cursor: pointer;
+  margin-top: -5px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent-bound);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 6px rgba(125, 207, 255, 0.6);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-bright);
+}
+
+/* ======================================================================
+   Readouts
+   ====================================================================== */
+.readouts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.readout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.readout-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.readout-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.readout-unit {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}

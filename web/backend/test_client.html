@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Singularity Backend — Test Client</title>
+<style>
+  body { background:#0d1117; color:#c9d1d9; font-family: ui-monospace, monospace; margin:0; padding:20px; }
+  h1 { font-size:16px; color:#7dcfff; font-weight:normal; }
+  #status { color:#9ece6a; margin-bottom:10px; }
+  #status.bad { color:#f7768e; }
+  canvas { background:#161b22; border:1px solid #30363d; border-radius:6px; display:block; margin-bottom:12px; }
+  .row { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap: wrap; }
+  button { background:#21262d; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:6px 14px; cursor:pointer; font-family:inherit; }
+  button:hover { background:#30363d; }
+  label { font-size:12px; color:#8b949e; }
+  input[type=range] { width:140px; }
+  .stat { font-size:12px; color:#8b949e; }
+  .stat b { color:#e6edf3; }
+</style>
+</head>
+<body>
+<h1>⚫ Project Singularity — Hawking Radiation (backend test client)</h1>
+<div id="status">connecting...</div>
+
+<canvas id="wave" width="900" height="260"></canvas>
+<canvas id="strip" width="900" height="120"></canvas>
+
+<div class="row">
+  <button id="start">Start</button>
+  <button id="pause">Pause</button>
+  <button id="reset">Reset</button>
+  <span class="stat">step <b id="step">0</b> · t=<b id="time">0.00</b> · P=<b id="prob">1.000</b> · flux=<b id="flux">0.000</b></span>
+</div>
+
+<div class="row">
+  <label>Hawking temperature <span id="tVal">0.15</span></label>
+  <input type="range" id="temp" min="0" max="1" step="0.01" value="0.15">
+  <label>Initial momentum p0 <span id="pVal">-2.5</span></label>
+  <input type="range" id="p0" min="-6" max="0" step="0.1" value="-2.5">
+</div>
+
+<script>
+const wsUrl = "ws://" + location.hostname + ":8000/ws";
+let ws;
+const statusEl = document.getElementById("status");
+
+function connect() {
+  ws = new WebSocket(wsUrl);
+  ws.onopen = () => { statusEl.textContent = "connected → " + wsUrl; statusEl.className = ""; };
+  ws.onclose = () => { statusEl.textContent = "disconnected — retrying..."; statusEl.className = "bad"; setTimeout(connect, 1500); };
+  ws.onerror = () => { statusEl.className = "bad"; };
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === "state") drawState(msg.data);
+    if (msg.type === "error") console.error(msg.message);
+  };
+}
+connect();
+
+function send(cmd, params) {
+  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ command: cmd, params }));
+}
+document.getElementById("start").onclick = () => send("start");
+document.getElementById("pause").onclick = () => send("pause");
+document.getElementById("reset").onclick = () => send("reset");
+
+const tempSlider = document.getElementById("temp");
+const p0Slider = document.getElementById("p0");
+tempSlider.oninput = () => { document.getElementById("tVal").textContent = tempSlider.value; };
+p0Slider.oninput = () => { document.getElementById("pVal").textContent = p0Slider.value; };
+tempSlider.onchange = () => send("set_params", { hawking_temperature: parseFloat(tempSlider.value) });
+p0Slider.onchange = () => send("set_params", { p0: parseFloat(p0Slider.value) });
+
+const waveCanvas = document.getElementById("wave");
+const wctx = waveCanvas.getContext("2d");
+const stripCanvas = document.getElementById("strip");
+const sctx = stripCanvas.getContext("2d");
+let probHistory = [], fluxHistory = [];
+
+function drawState(d) {
+  document.getElementById("step").textContent = d.step;
+  document.getElementById("time").textContent = d.time.toFixed(2);
+  document.getElementById("prob").textContent = d.probability.toFixed(4);
+  document.getElementById("flux").textContent = d.flux.toFixed(4);
+
+  // wavefunction density + hawking radiation
+  wctx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+  const r = d.r, dens = d.density, hawk = d.hawking, V = d.potential;
+  const rMin = d.rs, rMax = d.rs + 60;
+  const xOf = (rv) => ((rv - rMin) / (rMax - rMin)) * waveCanvas.width;
+  const h = waveCanvas.height;
+
+  // horizon line
+  wctx.strokeStyle = "#30363d";
+  wctx.beginPath(); wctx.moveTo(xOf(d.rs), 0); wctx.lineTo(xOf(d.rs), h); wctx.stroke();
+
+  // potential (faint)
+  wctx.strokeStyle = "#3b4252";
+  wctx.beginPath();
+  for (let i = 0; i < r.length; i++) {
+    const x = xOf(r[i]); if (x < 0 || x > waveCanvas.width) continue;
+    const y = h * 0.7 - V[i] * h * 0.05;
+    i === 0 ? wctx.moveTo(x, y) : wctx.lineTo(x, y);
+  }
+  wctx.stroke();
+
+  // density
+  wctx.strokeStyle = "#7dcfff";
+  wctx.lineWidth = 1.5;
+  wctx.beginPath();
+  let started = false;
+  for (let i = 0; i < r.length; i++) {
+    const x = xOf(r[i]); if (x < 0 || x > waveCanvas.width) continue;
+    const y = h - dens[i] * h * 0.8 - 5;
+    if (!started) { wctx.moveTo(x, y); started = true; } else wctx.lineTo(x, y);
+  }
+  wctx.stroke();
+
+  // hawking radiation
+  wctx.strokeStyle = "#f7768e";
+  wctx.lineWidth = 1.5;
+  wctx.beginPath();
+  started = false;
+  for (let i = 0; i < r.length; i++) {
+    const x = xOf(r[i]); if (x < 0 || x > waveCanvas.width) continue;
+    const y = h - hawk[i] * h * 0.8 - 5;
+    if (!started) { wctx.moveTo(x, y); started = true; } else wctx.lineTo(x, y);
+  }
+  wctx.stroke();
+
+  // strip chart
+  probHistory.push(d.probability); fluxHistory.push(d.flux);
+  if (probHistory.length > 300) { probHistory.shift(); fluxHistory.shift(); }
+  sctx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
+  const plot = (arr, color, scale) => {
+    sctx.strokeStyle = color; sctx.beginPath();
+    arr.forEach((v, i) => {
+      const x = (i / 300) * stripCanvas.width;
+      const y = stripCanvas.height - v * scale;
+      i === 0 ? sctx.moveTo(x, y) : sctx.lineTo(x, y);
+    });
+    sctx.stroke();
+  };
+  plot(probHistory, "#9ece6a", stripCanvas.height);
+  plot(fluxHistory, "#e0af68", stripCanvas.height * 5);
+}
+</script>
+</body>
+</html>
