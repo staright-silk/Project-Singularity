@@ -19,9 +19,7 @@ export default function Home() {
             <em>near a horizon</em>
           </h1>
           <p className="page-sub">
-            This project started with a plain question: what happens when a packet of probability moves toward a
-            horizon? The answer is a compact numerical model that keeps the steps visible instead of hiding them
-            behind a polished animation.
+        
           </p>
           <div className="hud glass">
             <div className="hud-item">
