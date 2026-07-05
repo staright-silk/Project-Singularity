@@ -12,43 +12,43 @@ export default function Simulation() {
 
       <main>
         <div className="page-hero">
-          <div className="eyebrow mono">Solver · renderer · dashboard</div>
+          <div className="eyebrow mono">Solver · dashboard · process</div>
           <h1 className="page-title">
-            What the <em>numbers</em> look like.
+            The <em>numbers</em> in motion.
           </h1>
           <p className="page-sub">
-            Three independent programs computing and displaying the same spacetime — a physics core, a GPU
-            renderer, and the live telemetry dashboard running below, connected to the real backend.
+            The live backend solves a 1D radial wave equation in a Schwarzschild-inspired background, and the
+            dashboard below shows the result as it evolves: a complex wavefunction, a horizon-shaped potential,
+            and a Hawking-like source near the event horizon.
           </p>
         </div>
 
         <section>
           <div className="section-inner">
             <Reveal className="section-head">
-              <div className="section-eyebrow mono">01 — quantum core</div>
-              <h2 className="section-title">The split-operator solver.</h2>
+              <div className="section-eyebrow mono">01 — wavefunction</div>
+              <h2 className="section-title">The state variable is psi(r, t).</h2>
               <p className="section-desc">
-                A 3D split-operator Fourier method with Strang splitting propagates a wavefunction through a real
-                Schwarzschild potential. Absorbing boundaries prevent reflection artifacts, and a stochastic term
-                injects Hawking radiation directly into the evolving state — so the glow in the dashboard below
-                isn't decorative, it's read off this solver.
+                The solver starts from a normalized Gaussian wave packet and evolves it on a radial grid just
+                outside the event horizon. The plotted density is |psi(r, t)|², and the retained probability is
+                tracked as the packet interacts with the Schwarzschild-like potential.
               </p>
             </Reveal>
             <div className="grid-2">
               <Reveal className="card glass">
-                <span className="card-index mono">method</span>
-                <h3 className="card-name">Strang Splitting</h3>
+                <span className="card-index mono">state</span>
+                <h3 className="card-name">Complex Wavefunction</h3>
                 <p className="card-desc">
-                  Kinetic and potential operators alternate in a symmetric sequence, giving second-order accuracy
-                  in time without solving the full Hamiltonian at every step.
+                  The packet moves on a radial grid outside the horizon, with the Schwarzschild radius rs shaping
+                  the environment and the effective potential acting as the scattering background.
                 </p>
               </Reveal>
               <Reveal className="card glass">
                 <span className="card-index mono">diagnostics</span>
-                <h3 className="card-name">Full Instrumentation</h3>
+                <h3 className="card-name">Probability & Flux</h3>
                 <p className="card-desc">
-                  Probability conservation, energy expectation, and radiation flux are logged every step, plus
-                  marching-cubes isosurfaces for 3D visualization and automated PDF reporting.
+                  The live UI tracks retained probability, captured probability, and emitted flux so the visual
+                  output can be tied back to the actual solver state.
                 </p>
               </Reveal>
             </div>
@@ -58,29 +58,29 @@ export default function Simulation() {
         <section>
           <div className="section-inner">
             <Reveal className="section-head">
-              <div className="section-eyebrow mono">02 — photon pipeline</div>
-              <h2 className="section-title">The Vulkan raymarcher.</h2>
+              <div className="section-eyebrow mono">02 — numerical method</div>
+              <h2 className="section-title">A split-operator FFT step.</h2>
               <p className="section-desc">
-                A compute-shader pipeline raymarches light paths bent by the horizon's curvature, then runs an
-                Unreal-style bloom pass for the glow around the photon ring. The accretion disk uses ridged noise
-                to fracture into bright filaments with visible dark gaps, rather than a smooth painted gradient.
+                Each time step is a half potential step, a full kinetic step in Fourier space, and another half
+                potential step. The operators are precomputed, and an imaginary absorbing layer W removes outgoing
+                probability near the grid boundaries so the simulation does not reflect waves back into the domain.
               </p>
             </Reveal>
             <div className="grid-2">
               <Reveal className="card glass">
-                <span className="card-index mono">pass 1</span>
-                <h3 className="card-name">Lensing Raymarch</h3>
+                <span className="card-index mono">step</span>
+                <h3 className="card-name">Half / Full / Half</h3>
                 <p className="card-desc">
-                  Photon trajectories are bent using a Schwarzschild approximation, producing the characteristic
-                  ring and disk-behind-horizon warp.
+                  The method alternates kinetic and potential updates in a symmetric sequence, which keeps the
+                  evolution compact and numerically explicit.
                 </p>
               </Reveal>
               <Reveal className="card glass">
-                <span className="card-index mono">pass 2</span>
-                <h3 className="card-name">HDR Bloom</h3>
+                <span className="card-index mono">absorption</span>
+                <h3 className="card-name">Absorbing Boundaries</h3>
                 <p className="card-desc">
-                  A separable Gaussian bloom over the bright-pass buffer, tonemapped with ACES filmic curves for a
-                  cinematic rather than clipped highlight.
+                  The absorbed probability is estimated every step and appears as captured probability in the UI,
+                  making the boundary behavior visible rather than hidden.
                 </p>
               </Reveal>
             </div>
@@ -91,10 +91,11 @@ export default function Simulation() {
           <div className="section-inner">
             <Reveal className="section-head">
               <div className="section-eyebrow mono">03 — instrument panel</div>
-              <h2 className="section-title">Live telemetry, right here.</h2>
+              <h2 className="section-title">The dashboard reads the running solver.</h2>
               <p className="section-desc">
-                This panel is the real dashboard, connected over WebSocket to the FastAPI backend — not a
-                recording. If the backend isn't running, it'll show a link-lost state below rather than fake data.
+                The panel below is connected over WebSocket to the FastAPI backend. It shows the retained density,
+                the near-horizon Hawking-like source display, the effective potential, and the event-horizon marker
+                as the simulation evolves.
               </p>
             </Reveal>
             <Reveal className="dashboard-embed glass">

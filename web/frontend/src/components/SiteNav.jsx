@@ -5,7 +5,7 @@ export default function SiteNav() {
     <nav className="site-navbar glass">
       <div className="site-brand">
         <span className="site-brand-dot" />
-        SINGULARITY
+        PROJECT SINGULARITY
       </div>
       <div className="site-nav-links">
         <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>

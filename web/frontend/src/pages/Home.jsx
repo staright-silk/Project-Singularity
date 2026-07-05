@@ -12,33 +12,33 @@ export default function Home() {
 
       <main>
         <div className="page-hero">
-          <div className="eyebrow mono">Schwarzschild geometry · live solver</div>
+          <div className="eyebrow mono">Numerical black-hole simulation stack</div>
           <h1 className="page-title">
-            A universe bent
+            A controlled
             <br />
-            <em>around nothing.</em>
+            <em>quantum model</em>
           </h1>
           <p className="page-sub">
-            Project Singularity renders gravitational lensing, evaporating Hawking radiation, and a rotating
-            accretion disk from a real split-operator quantum solver — across a GPU renderer, a live dashboard,
-            and a physical sculpture.
+            Project Singularity is a numerical black-hole quantum simulation stack. It pairs a live web dashboard
+            for a 1D radial Hawking-radiation model with standalone Python research engines for black-hole
+            wave-packet scattering.
           </p>
           <div className="hud glass">
             <div className="hud-item">
-              <div className="hud-label mono">Mass</div>
-              <div className="hud-value mono">4.3M M☉</div>
+              <div className="hud-label mono">State</div>
+              <div className="hud-value mono">psi(r, t)</div>
             </div>
             <div className="hud-item">
-              <div className="hud-label mono">Schwarzschild r</div>
-              <div className="hud-value mono">1.27×10⁷ km</div>
+              <div className="hud-label mono">Density</div>
+              <div className="hud-value mono">|psi|²</div>
             </div>
             <div className="hud-item">
-              <div className="hud-label mono">Hawking T</div>
-              <div className="hud-value mono">6.2×10⁻¹⁴ K</div>
+              <div className="hud-label mono">Method</div>
+              <div className="hud-value mono">FFT split-operator</div>
             </div>
             <div className="hud-item">
-              <div className="hud-label mono">Spin a*</div>
-              <div className="hud-value mono">0.00</div>
+              <div className="hud-label mono">Source</div>
+              <div className="hud-value mono">Hawking-like noise</div>
             </div>
           </div>
         </div>
@@ -46,20 +46,20 @@ export default function Home() {
         <section>
           <div className="section-inner">
             <Reveal className="section-head">
-              <div className="section-eyebrow mono">The stack</div>
-              <h2 className="section-title">Four instruments, one geometry.</h2>
+              <div className="section-eyebrow mono">The process</div>
+              <h2 className="section-title">Two related pieces, one shared method.</h2>
               <p className="section-desc">
-                Each component approaches the same Schwarzschild spacetime from a different angle — a solver, a
-                renderer, a dashboard, and a sculpture — built independently, converging on the same physics.
+                The live backend evolves a complex wavefunction near a Schwarzschild-like horizon, while the
+                standalone Python engines explore the same ideas in a more research-oriented form.
               </p>
             </Reveal>
             <div className="grid-2">
               <Reveal as={Link} to="/simulation" className="card glass">
                 <span className="card-index mono">01 / solver</span>
-                <h3 className="card-name">Quantum Core</h3>
+                <h3 className="card-name">Live Wave Solver</h3>
                 <p className="card-desc">
-                  A 3D split-operator Fourier solver with Strang splitting and stochastic Hawking radiation
-                  injection, run against a real Schwarzschild potential.
+                  The backend solves a 1D radial wave equation in a Schwarzschild-inspired background, tracks
+                  retained probability, and streams the result to a React dashboard.
                 </p>
                 <div className="tags">
                   <span className="tag">Python</span>
@@ -67,23 +67,23 @@ export default function Home() {
                 </div>
               </Reveal>
               <Reveal as={Link} to="/simulation" className="card glass">
-                <span className="card-index mono">02 / renderer</span>
-                <h3 className="card-name">Photon Pipeline</h3>
+                <span className="card-index mono">02 / engines</span>
+                <h3 className="card-name">Research Engines</h3>
                 <p className="card-desc">
-                  A Vulkan compute-shader raymarcher bending light around the horizon in real time, with a
-                  fragmented, ridge-noise accretion disk.
+                  The repository also contains standalone Python models for black-hole wave-packet scattering,
+                  built from a Gaussian packet, an effective potential, and split-operator evolution.
                 </p>
                 <div className="tags">
-                  <span className="tag">Vulkan</span>
-                  <span className="tag">GLSL</span>
+                  <span className="tag">Wave packet</span>
+                  <span className="tag">Schwarzschild</span>
                 </div>
               </Reveal>
               <Reveal as={Link} to="/simulation" className="card glass">
                 <span className="card-index mono">03 / dashboard</span>
                 <h3 className="card-name">Instrument Panel</h3>
                 <p className="card-desc">
-                  A React front end streaming live solver state over WebSocket from a FastAPI backend, updated in
-                  real time.
+                  The browser receives state frames over WebSocket and plots retained density, Hawking-like flux,
+                  captured probability, and the horizon marker in real time.
                 </p>
                 <div className="tags">
                   <span className="tag">React</span>
@@ -92,10 +92,10 @@ export default function Home() {
               </Reveal>
               <Reveal as={Link} to="/model" className="card glass">
                 <span className="card-index mono">04 / object</span>
-                <h3 className="card-name">Physical Model</h3>
+                <h3 className="card-name">Physical Companion</h3>
                 <p className="card-desc">
-                  A 3D-printed event horizon and accretion disk, lit with addressable LEDs driven by the solver's
-                  own Hawking-flux output.
+                  The physical model translates the same numerical ingredients into a tangible exhibit, so the
+                  horizon and emission region can be seen and touched.
                 </p>
                 <div className="tags">
                   <span className="tag">PLA/PETG</span>
@@ -109,9 +109,8 @@ export default function Home() {
         <section>
           <Reveal className="section-inner" as="div">
             <p className="pull">
-              Built to survive contact with a judge who asks{" "}
-              <span>"okay, but what's actually being computed?"</span> — every visual on this site traces back to
-              a real number the solver produced.
+              This is not a full quantum-gravity simulator. It is a controlled numerical model built from standard
+              ingredients: a wave packet, an effective black-hole potential, absorbing boundaries, and diagnostics.
             </p>
           </Reveal>
         </section>

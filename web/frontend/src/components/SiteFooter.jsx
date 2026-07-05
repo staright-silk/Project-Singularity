@@ -12,7 +12,7 @@ export default function SiteFooter() {
           GitHub
         </a>
       </div>
-      <div className="site-footer-note mono">Project Singularity — Schwarzschild geometry, rendered honestly.</div>
+      <div className="site-footer-note mono">Project Singularity — a numerical black-hole quantum simulation stack.</div>
     </footer>
   );
 }

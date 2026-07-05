@@ -13,13 +13,13 @@ export default function Model() {
         <div className="page-hero">
           <div className="eyebrow mono">Held in the hand</div>
           <h1 className="page-title">
-            The sculpture judges
+            The same process,
             <br />
-            <em>actually touch.</em>
+            <em>made physical.</em>
           </h1>
           <p className="page-sub">
-            A matte event horizon suspended inside a translucent, lit accretion disk — the one exhibit piece that
-            doesn't need a screen to be understood.
+            The physical model is not a separate simulation. It is a material version of the same ingredients from
+            the README: a wave packet, a horizon, and a near-horizon emission region made visible.
           </p>
         </div>
 
@@ -30,27 +30,27 @@ export default function Model() {
             </Reveal>
             <Reveal>
               <div className="section-eyebrow mono">Construction</div>
-              <h2 className="section-title">Two prints, one light source.</h2>
+              <h2 className="section-title">A horizon, a disk, and a light source.</h2>
               <p className="section-desc">
-                The horizon and disk are printed separately so the disk can be translucent while the horizon
-                stays matte black — light diffuses through the disk rather than pooling at LED points.
+                The horizon and disk are printed separately so the disk can remain translucent while the horizon
+                stays matte black, making the geometry legible without pretending it is a full spacetime model.
               </p>
               <ul className="model-list">
                 <li>
-                  <span className="dot">→</span>Matte-black PLA/PETG event-horizon sphere, sprayed flat to kill
-                  reflections.
+                  <span className="dot">→</span>A matte-black event-horizon sphere stands in for the Schwarzschild
+                  radius rs.
                 </li>
                 <li>
-                  <span className="dot">→</span>Translucent disk ring, mounted on standoffs so it never touches
-                  the horizon.
+                  <span className="dot">→</span>A translucent disk ring represents the radial domain outside the
+                  horizon.
                 </li>
                 <li>
-                  <span className="dot">→</span>WS2812B addressable strip graded white-hot inward to deep red
-                  outward, matching real temperature falloff.
+                  <span className="dot">→</span>Addressable LEDs echo the Hawking-like emission model rather than a
+                  fixed animation.
                 </li>
                 <li>
-                  <span className="dot">→</span>A thin photon-ring of LEDs just outside the horizon — the single
-                  detail that reads as "real black hole" at a glance.
+                  <span className="dot">→</span>The object turns the numerical process into something that can be seen
+                  and touched at an exhibition table.
                 </li>
               </ul>
             </Reveal>
@@ -61,15 +61,15 @@ export default function Model() {
           <div className="section-inner">
             <Reveal className="section-head">
               <div className="section-eyebrow mono">Bill of materials</div>
-              <h2 className="section-title">What's actually in it.</h2>
+              <h2 className="section-title">What actually makes it work.</h2>
             </Reveal>
             <div className="grid-2">
               <Reveal className="card glass">
                 <span className="card-index mono">printing</span>
                 <h3 className="card-name">Filament & Print</h3>
                 <p className="card-desc">
-                  Matte black PLA/PETG for the horizon; translucent or clear filament for the disk. FDM is
-                  sufficient — resin only if finer photon-ring detail is wanted.
+                  Matte black PLA or PETG for the horizon, and translucent or clear filament for the disk. FDM is
+                  enough for the geometry described in the project notes.
                 </p>
                 <div className="tags">
                   <span className="tag">PLA</span>
@@ -81,8 +81,8 @@ export default function Model() {
                 <span className="card-index mono">structure</span>
                 <h3 className="card-name">Base & Mounts</h3>
                 <p className="card-desc">
-                  MDF or acrylic base plate, threaded rod or printed standoffs to hold the disk at an angle around
-                  the horizon with a visible gap.
+                  An MDF or acrylic plate and simple standoffs keep the disk clear of the horizon while leaving the
+                  geometry readable from the side.
                 </p>
                 <div className="tags">
                   <span className="tag">MDF</span>
@@ -93,8 +93,8 @@ export default function Model() {
                 <span className="card-index mono">lighting</span>
                 <h3 className="card-name">LEDs & Control</h3>
                 <p className="card-desc">
-                  WS2812B addressable strip, ESP32 or Arduino controller, 5V supply sized to the strip's draw,
-                  plus frosted acrylic or the print itself for diffusion.
+                  WS2812B addressable LEDs and an ESP32 or Arduino controller provide a controllable light source
+                  for the emission region.
                 </p>
                 <div className="tags">
                   <span className="tag">WS2812B</span>
@@ -105,8 +105,8 @@ export default function Model() {
                 <span className="card-index mono">finishing</span>
                 <h3 className="card-name">Paint & Tools</h3>
                 <p className="card-desc">
-                  Matte black spray for the horizon, clear UV-resistant coat for the disk, plus a soldering iron,
-                  hot glue, and a multimeter for wiring checks.
+                  Matte black spray for the horizon and a clear coat for the disk are enough to keep the object
+                  visually direct, with a soldering iron and multimeter for wiring checks.
                 </p>
                 <div className="tags">
                   <span className="tag">Spray paint</span>
@@ -120,8 +120,8 @@ export default function Model() {
         <section>
           <Reveal className="section-inner">
             <p className="pull">
-              Optional: feed the ESP32 live Hawking-flux values from the quantum solver over WiFi, so disk
-              brightness answers to <span>an actual running simulation</span> instead of a fixed animation.
+              The optional next step is to let the ESP32 respond to live Hawking-flux values from the solver, so the
+              disk brightness answers to <span>an actual running simulation</span> rather than a fixed animation.
             </p>
           </Reveal>
         </section>
