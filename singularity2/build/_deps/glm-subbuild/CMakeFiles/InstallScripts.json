@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/staright/Downloads/singularity2/build/_deps/glm-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/staright/Downloads/singularity2/build/cmake_install.cmake",
+		"/home/staright/Downloads/singularity2/build/_deps/glfw-build/cmake_install.cmake",
+		"/home/staright/Downloads/singularity2/build/_deps/glfw-build/src/cmake_install.cmake",
+		"/home/staright/Downloads/singularity2/build/_deps/vk-bootstrap-build/cmake_install.cmake",
+		"/home/staright/Downloads/singularity2/build/_deps/glm-build/cmake_install.cmake",
+		"/home/staright/Downloads/singularity2/build/_deps/glm-build/glm/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

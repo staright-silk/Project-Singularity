@@ -1,0 +1,24 @@
+# Hashes of file build rules.
+21e05d8facea97660ecd81dd3dbe1f0e CMakeFiles/shaders
+a34e77bd3665ff91bdb61ae314446489 _deps/glfw-build/CMakeFiles/uninstall
+e1c84f39602806560c651bba9135f3bf _deps/glfw-build/src/CMakeFiles/update_mappings
+233307add166579a44e2c7d9f63ebe33 _deps/glfw-build/src/fractional-scale-v1-client-protocol-code.h
+e8fe7910a6d878cb6be98670ee905641 _deps/glfw-build/src/fractional-scale-v1-client-protocol.h
+94a34cf7a79a3d142ba79b4a0da902c1 _deps/glfw-build/src/idle-inhibit-unstable-v1-client-protocol-code.h
+99d5b352235ee1720c965af0f0bb18b8 _deps/glfw-build/src/idle-inhibit-unstable-v1-client-protocol.h
+894ea4f10699672cef42001d88eca966 _deps/glfw-build/src/pointer-constraints-unstable-v1-client-protocol-code.h
+fd970a2b153227530f062436b9e31b60 _deps/glfw-build/src/pointer-constraints-unstable-v1-client-protocol.h
+cb17adf4303cd5d79b97e8bddb7137d5 _deps/glfw-build/src/relative-pointer-unstable-v1-client-protocol-code.h
+1829b467b818efca96ec8d57b79ed507 _deps/glfw-build/src/relative-pointer-unstable-v1-client-protocol.h
+06b71ab80198b39a4f99bccca880b2e7 _deps/glfw-build/src/viewporter-client-protocol-code.h
+2e2b62dfb7143cb1f6d0accb1b6d23c3 _deps/glfw-build/src/viewporter-client-protocol.h
+d4b1b3514078f0c0613da4a22cf6d39a _deps/glfw-build/src/wayland-client-protocol-code.h
+0676b45e1a5d805bfb2c27af73213c3a _deps/glfw-build/src/wayland-client-protocol.h
+e944854170e68a2ec6d3fd0cb56508b7 _deps/glfw-build/src/xdg-activation-v1-client-protocol-code.h
+b2b26527e42d5a41c0788ae7c7ea3b1e _deps/glfw-build/src/xdg-activation-v1-client-protocol.h
+cb71da58eabf431fa59d51b48733acbe _deps/glfw-build/src/xdg-decoration-unstable-v1-client-protocol-code.h
+558581d92ec20d6c6bb048624b3fe201 _deps/glfw-build/src/xdg-decoration-unstable-v1-client-protocol.h
+cd5876b0480cede461d148d23d5e07b1 _deps/glfw-build/src/xdg-shell-client-protocol-code.h
+4ae1a639ffd8e1fee28f146271e607ac _deps/glfw-build/src/xdg-shell-client-protocol.h
+7016945e637b785b906436f7e575d8b9 shaders/bloom.comp.spv
+cb780527fe7072e61df4c5d5a19489d0 shaders/raymarch.comp.spv
