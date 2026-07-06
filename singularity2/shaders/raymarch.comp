@@ -1,0 +1,191 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0, rgba16f) uniform writeonly image2D outImage; // HDR, unclamped — bloom pass tonemaps later
+
+layout(push_constant) uniform PushConstants {
+    vec4 resTime;     // xy = resolution, z = time (s), w = Schwarzschild radius Rs
+    vec4 camPos;      // xyz = camera position
+    vec4 camForward;  // xyz = camera forward (normalized)
+    vec4 camRight;    // xyz = camera right (normalized)
+    vec4 camUp;       // xyz = camera up, w = disk inner radius (in units of Rs)
+} pc;
+
+// ---------------------------------------------------------------------------
+// Small helpers
+// ---------------------------------------------------------------------------
+float hash13(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+float valueNoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    float a = hash12(i);
+    float b = hash12(i + vec2(1, 0));
+    float c = hash12(i + vec2(0, 1));
+    float d = hash12(i + vec2(1, 1));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+    float sum = 0.0, amp = 0.5;
+    for (int i = 0; i < 4; i++) {
+        sum += amp * valueNoise(p);
+        p *= 2.02;
+        amp *= 0.5;
+    }
+    return sum;
+}
+
+// Ridged noise: folds value noise around its midpoint so it forms thin bright
+// crests with real dark valleys between them, instead of smooth soft blobs.
+// This is what turns a disk into visibly separated filaments/wisps.
+float ridgeNoise(vec2 p) {
+    float n = valueNoise(p);
+    return 1.0 - abs(2.0 * n - 1.0);
+}
+
+float ridgedFbm(vec2 p) {
+    float sum = 0.0, amp = 0.55;
+    for (int i = 0; i < 5; i++) {
+        float r = ridgeNoise(p);
+        sum += amp * r * r; // squaring sharpens the ridges further
+        p *= 2.15;
+        amp *= 0.55;
+    }
+    return sum;
+}
+
+// Procedural starfield with subtle color variation and a faint nebula haze
+vec3 starfield(vec3 dir) {
+    vec3 p = dir * 400.0;
+    vec3 cell = floor(p);
+    float n = hash13(cell);
+    float star = smoothstep(0.993, 1.0, n) * 1.6;
+    float colorSeed = hash13(cell + 7.7);
+    vec3 starColor = mix(vec3(0.65, 0.75, 1.0), vec3(1.0, 0.85, 0.65), step(0.85, colorSeed));
+    vec3 col = starColor * star;
+    float haze = fbm(dir.xz * 2.0 + dir.y) * 0.04;
+    col += mix(vec3(0.01, 0.015, 0.03), vec3(0.05, 0.03, 0.07), haze) * (0.6 + 0.4 * abs(dir.y));
+    return col;
+}
+
+// Disk color ramp: bright white-gold core fading to warm amber at the rim.
+vec3 diskBaseColor(float t) {
+    vec3 core = vec3(1.5, 1.45, 1.3);
+    vec3 gold = vec3(1.5, 1.05, 0.55);
+    vec3 amber = vec3(1.1, 0.55, 0.22);
+    return t < 0.35 ? mix(core, gold, t / 0.35) : mix(gold, amber, (t - 0.35) / 0.65);
+}
+
+// Relativistic Doppler beaming (softened exponent for a smooth gradient)
+float dopplerBeaming(float rc, float innerR, float angle, vec3 worldPos, vec3 camPos, out vec3 tint) {
+    vec3 tangent = normalize(vec3(-sin(angle), 0.0, cos(angle)));
+    float beta = clamp(0.3 * sqrt(innerR / max(rc, innerR)), 0.0, 0.85);
+    vec3 toCam = normalize(camPos - worldPos);
+    float approach = dot(tangent, toCam);
+    float beaming = pow(1.0 / max(1.0 - beta * approach, 0.25), 1.8);
+    tint = mix(vec3(1.0, 0.7, 0.55), vec3(0.85, 0.92, 1.1), approach * 0.5 + 0.5);
+    return beaming;
+}
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    vec2 resolution = pc.resTime.xy;
+    if (pixel.x >= int(resolution.x) || pixel.y >= int(resolution.y)) return;
+
+    float Rs = pc.resTime.w;
+    float time = pc.resTime.z;
+
+    vec2 uv = (vec2(pixel) + 0.5) / resolution;
+    uv = uv * 2.0 - 1.0;
+    uv.y = -uv.y; // pixel row 0 is the top of the window and must map to +up
+    uv.x *= resolution.x / resolution.y;
+
+    const float focalLength = 1.8;
+    uv /= focalLength;
+
+    vec3 pos = pc.camPos.xyz;
+    vec3 camOrigin = pos;
+    vec3 dir = normalize(pc.camForward.xyz + uv.x * pc.camRight.xyz + uv.y * pc.camUp.xyz);
+
+    float jitter = hash13(vec3(pixel, time)) * 0.5;
+
+    vec3 h = cross(pos, dir);
+    float h2 = dot(h, h);
+
+    float innerR = pc.camUp.w * Rs;
+    float outerR = innerR * 6.0;
+
+    bool hitHorizon = false;
+    bool hitDisk = false;
+    vec3 diskHitColor = vec3(0.0);
+
+    const int STEPS = 220;
+    float dt = 0.15 * Rs;
+    float prevY = pos.y;
+
+    for (int i = 0; i < STEPS; ++i) {
+        float r = length(pos);
+        if (r < Rs) { hitHorizon = true; break; }
+        if (r > 60.0 * Rs) break;
+
+        vec3 accel = -1.5 * Rs * h2 * pos / pow(r, 5.0);
+        dir += accel * dt;
+        dir = normalize(dir);
+
+        vec3 newPos = pos + dir * (dt + jitter * dt * 0.05);
+
+        if (!hitDisk && sign(newPos.y) != sign(prevY)) {
+            float travel = abs(prevY) / max(abs(newPos.y - prevY), 1e-5);
+            vec3 crossPos = mix(pos, newPos, travel);
+            float rc = length(crossPos.xz);
+            if (rc > innerR && rc < outerR) {
+                hitDisk = true;
+                float t = clamp((rc - innerR) / (outerR - innerR), 0.0, 1.0);
+                float angle = atan(crossPos.z, crossPos.x);
+                vec3 tint;
+                float beaming = dopplerBeaming(rc / Rs, innerR / Rs, angle, crossPos, camOrigin, tint);
+                float turbulence = ridgedFbm(vec2(angle * 4.0 - time * (1.4 / max(rc / Rs, 0.5)), rc * 0.5) * 2.5);
+                float density = mix(0.12, 1.6, turbulence) * (1.0 - t * 0.4);
+                diskHitColor = diskBaseColor(t) * tint * density * beaming * 1.7;
+            }
+        }
+
+        prevY = pos.y;
+        pos = newPos;
+        if (hitDisk) break;
+    }
+
+    vec3 color;
+    if (hitHorizon) {
+        color = vec3(0.0);
+    } else if (hitDisk) {
+        color = diskHitColor;
+    } else {
+        color = starfield(dir);
+    }
+
+    // Photon-ring glow: warm inner rim fading to cool blue-white outward.
+    // This is real raymarched radiance (lensing magnification near the photon
+    // sphere), not a post-process trick — the bloom pass will add extra
+    // soft bleed around it on top.
+    float closestApproach = length(pos);
+    float ringDist = closestApproach / Rs - 1.5;
+    float ringGlow = exp(-ringDist * ringDist * 8.0) * 0.9;
+    vec3 ringColor = mix(vec3(1.1, 0.65, 0.3), vec3(0.75, 0.88, 1.15), smoothstep(-0.3, 0.3, ringDist));
+    color += ringColor * ringGlow;
+
+    // No tonemap here — this image is linear HDR. The bloom pass reads it,
+    // adds glow, then tonemaps.
+    imageStore(outImage, pixel, vec4(color, 1.0));
+}

@@ -1,0 +1,119 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 0) uniform sampler2D hdrTex;
+layout(binding = 1, rgba8) uniform writeonly image2D outImage;
+
+layout(push_constant) uniform BloomPC {
+    float resX;
+    float resY;
+    float exposure;
+    float threshold;
+} pc;
+
+vec3 acesTonemap(vec3 x) {
+    const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+// Soft-knee brightness mask: pixels below threshold contribute nothing,
+// pixels above ramp smoothly into full contribution instead of a hard cutoff.
+float brightnessMask(vec3 c, float thresh) {
+    float b = max(c.r, max(c.g, c.b));
+    return smoothstep(thresh, thresh * 2.2, b);
+}
+
+// One ring-sampled blur pass at a given texel radius. Used twice (tight +
+// wide radius) to fake the multi-mip-level combination a real engine bloom
+// (downsample -> blur -> upsample at several scales) would give you, without
+// needing a full mip chain of intermediate images.
+vec3 ringBloom(sampler2D tex, vec2 uv, vec2 texel, float radiusTexels, int rings, int samplesPerRing, float thresh) {
+    vec3 sum = vec3(0.0);
+    float totalWeight = 0.0;
+    for (int ring = 1; ring <= rings; ring++) {
+        float radius = (float(ring) / float(rings)) * radiusTexels;
+        float ringWeight = 1.0 / float(ring);
+        for (int s = 0; s < samplesPerRing; s++) {
+            float angle = (float(s) / float(samplesPerRing)) * 6.2831853;
+            vec2 offset = vec2(cos(angle), sin(angle)) * radius * texel;
+            vec3 c = texture(tex, uv + offset).rgb;
+            float mask = brightnessMask(c, thresh);
+            sum += c * mask * ringWeight;
+            totalWeight += ringWeight;
+        }
+    }
+    return sum / max(totalWeight, 1e-4);
+}
+
+// Anamorphic horizontal streak — the long thin cinematic light-saber effect
+// bright points throw sideways across the frame.
+vec3 anamorphicStreak(sampler2D tex, vec2 uv, vec2 texel, float thresh) {
+    vec3 streak = vec3(0.0);
+    const int TAPS = 14;
+    const float MAX_DIST = 90.0;
+    for (int i = 1; i <= TAPS; i++) {
+        float t = float(i) / float(TAPS);
+        float dist = t * MAX_DIST;
+        float falloff = 1.0 - t;
+        falloff *= falloff;
+        vec3 cRight = texture(tex, uv + vec2(dist * texel.x, 0.0)).rgb;
+        vec3 cLeft  = texture(tex, uv - vec2(dist * texel.x, 0.0)).rgb;
+        streak += cRight * brightnessMask(cRight, thresh) * falloff;
+        streak += cLeft  * brightnessMask(cLeft,  thresh) * falloff;
+    }
+    // Cool blue-white tint, classic anamorphic lens color
+    return streak * vec3(0.75, 0.85, 1.1) * (1.0 / float(TAPS));
+}
+
+// Four-point diffraction star spikes on only the very brightest pixels
+// (the horizon rim / photon ring), like light catching camera aperture blades.
+vec3 diffractionSpikes(sampler2D tex, vec2 uv, vec2 texel, float thresh) {
+    vec3 spikes = vec3(0.0);
+    const int TAPS = 10;
+    const float MAX_DIST = 55.0;
+    vec2 dirs[4] = vec2[](vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(0.707, 0.707), vec2(0.707, -0.707));
+    float spikeThresh = thresh * 1.8; // only the hottest pixels throw spikes
+    for (int d = 0; d < 4; d++) {
+        for (int i = 1; i <= TAPS; i++) {
+            float t = float(i) / float(TAPS);
+            float dist = t * MAX_DIST;
+            float falloff = pow(1.0 - t, 3.0);
+            vec2 off = dirs[d] * dist * texel;
+            vec3 cA = texture(tex, uv + off).rgb;
+            vec3 cB = texture(tex, uv - off).rgb;
+            spikes += cA * brightnessMask(cA, spikeThresh) * falloff;
+            spikes += cB * brightnessMask(cB, spikeThresh) * falloff;
+        }
+    }
+    return spikes * (1.0 / float(TAPS * 4));
+}
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    vec2 resolution = vec2(pc.resX, pc.resY);
+    if (pixel.x >= int(resolution.x) || pixel.y >= int(resolution.y)) return;
+
+    vec2 uv = (vec2(pixel) + 0.5) / resolution;
+    vec2 texel = 1.0 / resolution;
+
+    vec3 original = texture(hdrTex, uv).rgb;
+
+    // Multi-scale bloom: tight sharp glow hugging edges + wide soft ambient glow
+    vec3 tightBloom = ringBloom(hdrTex, uv, texel, 4.0,  3, 8, pc.threshold);
+    vec3 wideBloom  = ringBloom(hdrTex, uv, texel, 20.0, 4, 10, pc.threshold);
+
+    vec3 streak = anamorphicStreak(hdrTex, uv, texel, pc.threshold);
+    vec3 spikes = diffractionSpikes(hdrTex, uv, texel, pc.threshold);
+
+    vec3 color = original
+                + tightBloom * 0.5
+                + wideBloom  * 0.6
+                + streak     * 0.35
+                + spikes     * 0.9;
+
+    color *= pc.exposure;
+    color = acesTonemap(color);
+
+    imageStore(outImage, pixel, vec4(color, 1.0));
+}
