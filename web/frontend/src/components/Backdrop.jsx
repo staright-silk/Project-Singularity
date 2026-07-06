@@ -52,11 +52,11 @@ const FRAG_SRC = `
     float starTwinkle = 0.6 + 0.4*sin(uTime*2.0 + starField*40.0);
     vec3 col = vec3(0.012,0.013,0.02) + stars*starTwinkle*vec3(0.75,0.85,1.0)*0.7;
 
-    float horizonR = 0.155;
-    float ringR = horizonR * 1.18;
-    float ring = smoothstep(0.012, 0.0, abs(r - ringR));
+    float horizonR = 0.16;
+    float ringR = horizonR * 1.06;
+    float ring = smoothstep(0.018, 0.0, abs(r - ringR)) * smoothstep(horizonR*0.85, horizonR, r);
 
-    vec2 diskUV = vec2(uv.x, uv.y*2.35);
+    vec2 diskUV = vec2(uv.x, uv.y*5.2); // much flatter — knife-edge disk, not a fat ellipse
     float diskR = length(diskUV);
     float angle = atan(diskUV.y, diskUV.x);
     float rot = uTime * 0.06;
@@ -64,22 +64,22 @@ const FRAG_SRC = `
     float filaments = fbmRidged(vec2(diskR*7.0, angle*2.6 + rot*9.0));
     filaments = pow(clamp(filaments,0.0,1.0), 1.8);
 
-    float diskMaskOuter = smoothstep(0.62, 0.15, diskR);
-    float diskMaskInner = smoothstep(horizonR*1.28, horizonR*1.4, diskR);
+    float diskMaskOuter = smoothstep(1.05, 0.55, diskR);
+    float diskMaskInner = smoothstep(horizonR*0.98, horizonR*1.12, diskR);
     float diskMask = diskMaskOuter * diskMaskInner;
 
-    float heat = smoothstep(0.55, 0.05, diskR);
-    vec3 cool = vec3(0.42,0.10,0.05);
-    vec3 mid  = vec3(1.0,0.55,0.16);
-    vec3 hot  = vec3(1.0,0.96,0.85);
-    vec3 diskColor = mix(cool, mid, smoothstep(0.0,0.6,heat));
-    diskColor = mix(diskColor, hot, smoothstep(0.55,1.0,heat));
-    diskColor *= (filaments*1.15 + 0.12);
+    float heat = smoothstep(0.85, 0.03, diskR);
+    vec3 cool = vec3(0.45,0.16,0.04);
+    vec3 mid  = vec3(1.0,0.62,0.2);
+    vec3 hot  = vec3(1.0,0.97,0.9);
+    vec3 diskColor = mix(cool, mid, smoothstep(0.0,0.55,heat));
+    diskColor = mix(diskColor, hot, smoothstep(0.5,1.0,heat));
+    diskColor *= (filaments*1.05 + 0.25);
 
     col = mix(col, diskColor, diskMask);
-    col += ring * vec3(0.65,0.88,1.0) * 1.4;
+    col += ring * vec3(0.85,0.93,1.0) * 1.6;
 
-    float horizon = smoothstep(horizonR, horizonR-0.008, r);
+    float horizon = smoothstep(horizonR, horizonR-0.006, r);
     col = mix(col, vec3(0.0), horizon);
 
     col = col / (1.0 + col*0.9);
