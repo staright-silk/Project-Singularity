@@ -721,6 +721,29 @@ input[type="range"]::-moz-range-track {
   border: 1px solid rgba(127,223,255,0.22);
 }
 
+/* cursor-following glow + magnetic tilt, applied via JS setting
+   --glow-x / --glow-y custom properties and an inline transform */
+.glow-tilt{
+  position: relative;
+  transition: transform 0.15s ease-out, border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+  will-change: transform;
+}
+.glow-tilt::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(220px circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(127,223,255,0.16), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.glow-tilt:hover::after{ opacity: 1; }
+@media (prefers-reduced-motion: reduce){
+  .glow-tilt{ transition: none !important; }
+  .glow-tilt::after{ display: none; }
+}
+
 /* model figure */
 .model-layout{ display:grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
 @media (max-width: 860px){ .model-layout{ grid-template-columns: 1fr; } }
