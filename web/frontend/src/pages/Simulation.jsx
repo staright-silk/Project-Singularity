@@ -3,6 +3,7 @@ import SiteNav from "../components/SiteNav.jsx";
 import SiteFooter from "../components/SiteFooter.jsx";
 import Reveal from "../components/Reveal.jsx";
 import Dashboard from "../components/Dashboard.jsx";
+import ReportPanel from "../components/ReportPanel.jsx";
 import { WavePacketDiagram, SplitOperatorDiagram } from "../components/PhysicsDiagrams.jsx";
 
 export default function Simulation() {
@@ -151,6 +152,23 @@ export default function Simulation() {
             </Reveal>
             <Reveal className="dashboard-embed glass">
               <Dashboard />
+            </Reveal>
+          </div>
+        </section>
+
+        <section>
+          <div className="section-inner">
+            <Reveal className="section-head">
+              <div className="section-eyebrow mono">06 — full research report</div>
+              <h2 className="section-title">Turn a run into a PDF you can actually hand someone.</h2>
+              <p className="section-desc">
+                The dashboard above is the live view. This regenerates the whole analysis from scratch on the
+                backend — baseline evolution, parameter sweeps, and a convergence test — and assembles it into a
+                downloadable report.
+              </p>
+            </Reveal>
+            <Reveal>
+              <ReportPanel />
             </Reveal>
           </div>
         </section>
